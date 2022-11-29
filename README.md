@@ -1,27 +1,53 @@
-## Brightside deployment notes
+## Brightside deployment
 This application is deployed on a GKE Cluster (Google K8s Engine) with a supporting Cloud SQL PG instance.
+The connection between the incident-bot container and CloudSQL is handled via a CloudSQL Proxy "Sidecar" container.
 
-For now this is accomplished by auth'ing and executing through the `gcloud cli`. To auth, `gcloud auth login`.
-This will eventually be handled in Circle CI.
+For now, deployment of infrastructure is done through Terraform Cloud and PRs in the mcnulty repo.
+
+[TBD] In the future any updates to the environment and the application can be handled with CI, if we find ourselves touching this codebase frequently enough.
 
 ### Deployment (from local CLI)
 
-#### Auth
+#### Authenticating with Google Cloud for GKE & CloudSQL Management
+
 ```
 gcloud auth login
 gcloud config set project brightside-prod # or brightside-dev-363022 for dev
 gcloud container clusters get-credentials gke-slackbots-1-prod # or gke-slackbots-1 for dev
 ```
 
-Get cluster credentials:
+##### Get cluster credentials:
 
 ```
 gcloud container clusters get-credentials gke-slackbots-1 --region=us-central1
 ```
 
-Be sure to create the appropriate db user for the incident-bot PG databse in Cloud SQL and create the secrets in GKE.
+Be sure to create the appropriate db user for the incident-bot PG databse in Cloud SQL and create the secrets for the env var in GKE.
+cfg-secrets.yml is stored in 1Password for the time being. This file includes all required environment variables for incident-bot.
+
 ```
 kubectl create secret generic incident-bot --from-env-file cfg-secrets.yml --namespace=slackbots
+```
+
+If you need to update or replace secret values, just delete and recreate them and scale down to zero & up, eg:
+
+```
+kubectl delete secret incident-bot
+kubectl create secret generic incident-bot --from-env-file cfg-secrets.yml --namespace=slackbots
+kubectl scale deployment incident-bot --replicas=0 -n slackbots
+kubectl scale deployment incident-bot --replicas=1 -n slackbots
+```
+
+#### Database Authentication
+
+If the CloudSQL PG instance is newly provisioned, you must update the built in user `postgres` first!. Make sure to add the password to the secrets config file in 1Password and replace the incident-bot secrets in GKE.
+
+You can get the instance name by invoking `gcloud sql instances list`.
+
+```
+gcloud sql users set-password postgres \
+--instance=INSTANCE_NAME \
+--prompt-for-password
 ```
 
 #### Build & Deploy
@@ -43,10 +69,18 @@ Since we have multiple containers in our pod (incident-bot and the CloudSQL Auth
 # down
 kubectl scale deployment incident-bot --replicas=0 -n slackbots
 # up
-kubectl scale deployment incident-bot --replicas=2 -n slackbots
+kubectl scale deployment incident-bot --replicas=1 -n slackbots
 ```
 
-# incident-bot
+### Scaling incident-bot
+
+This works the same way "restarting" via a scale event does:
+
+```
+kubectl scale deployment incident-bot --replicas=<desired capacity> -n slackbots
+```
+
+## incident-bot (Vanilla Docs)
 
 <img src="https://github.com/echoboomer/incident-bot/blob/main/assets/bot.png" width="125" height="125">
 
