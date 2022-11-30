@@ -13,14 +13,12 @@ For now, deployment of infrastructure is done through Terraform Cloud and PRs in
 ```
 gcloud auth login
 gcloud config set project brightside-prod # or brightside-dev-363022 for dev
+
+# get cluster credentials
 gcloud container clusters get-credentials gke-slackbots-1-prod # or gke-slackbots-1 for dev
 ```
 
-##### Get cluster credentials:
-
-```
-gcloud container clusters get-credentials gke-slackbots-1 --region=us-central1
-```
+#### Setting Secrets & Environment Variables
 
 Be sure to create the appropriate db user for the incident-bot PG databse in Cloud SQL and create the secrets for the env var in GKE.
 cfg-secrets.yml is stored in 1Password for the time being. This file includes all required environment variables for incident-bot.
