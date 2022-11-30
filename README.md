@@ -15,7 +15,7 @@ gcloud auth login
 gcloud config set project brightside-prod # or brightside-dev-363022 for dev
 
 # get cluster credentials
-gcloud container clusters get-credentials gke-slackbots-1-prod # or gke-slackbots-1 for dev
+gcloud container clusters get-credentials gke-slackbots-1-prod --region=us-central1# or gke-slackbots-1 for dev
 ```
 
 #### Setting Secrets & Environment Variables
