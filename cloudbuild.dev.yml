@@ -20,7 +20,7 @@ steps:
   - '-c'
   - |
     gcloud container clusters get-credentials --zone "$$CLOUDSDK_COMPUTE_ZONE" "$$CLOUDSDK_CONTAINER_CLUSTER"
-    kustomize build "deploy/kubernetes/incident-bot/base" | kubectl apply -f -
+    kustomize build "deploy/kubernetes/incident-bot/base/dev" | kubectl apply -f -
   env:
     - 'CLOUDSDK_COMPUTE_ZONE=us-central1'
     - 'CLOUDSDK_CONTAINER_CLUSTER=gke-slackbots-1'
