@@ -5,14 +5,14 @@ metadata:
     app: incident-bot
   name: incident-bot
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: incident-bot
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 2
+      maxSurge: 1
       maxUnavailable: 0
   template:
     metadata:
@@ -28,8 +28,6 @@ spec:
           envFrom:
             - secretRef:
                 name: incident-bot
-            # - configMapRef:
-            #     name: incident-bot
           ports:
             - name: api
               containerPort: 3000
@@ -95,7 +93,7 @@ spec:
               # The proxy's CPU use scales linearly with the amount of IO between
               # the database and the application. Adjust this value based on your
               # application's requirements.
-              cpu:    500m
+              cpu:    250m
       serviceAccountName: incident-bot
       nodeSelector:
         iam.gke.io/gke-metadata-server-enabled: "true"
