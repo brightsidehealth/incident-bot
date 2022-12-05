@@ -2,6 +2,7 @@ import re
 import config
 import datetime
 import logging
+import re
 import slack_sdk.errors
 
 from bot.audit import log
@@ -32,7 +33,9 @@ channel_name_length_cap = 80
 # How many characters does the incident prefix take up?
 channel_name_prefix_length = len("inc-20211116-")
 # How long can the provided description be?
-channel_description_max_length = channel_name_length_cap - channel_name_prefix_length
+channel_description_max_length = (
+    channel_name_length_cap - channel_name_prefix_length
+)
 # Which external providers are supported? Ones not in this list will error.
 enabled_providers = [
     "auth0",
@@ -62,10 +65,12 @@ class Incident:
         )
 
     def return_channel_name(self) -> str:
-        # Remove all special
-        channel_description = re.sub("[^A-Za-z0-9\s]", "", self.d["channel_description"])
+        # Remove any special characters (allow only alphanumeric)
+        channel_description = re.sub(
+            "[^A-Za-z0-9\s]", "", self.d["channel_description"]
+        )
         # Replace any spaces with dashes
-        channel_description = channel_description .replace(" ", "-").lower()
+        channel_description = channel_description.replace(" ", "-").lower()
         now = datetime.datetime.now()
         return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{channel_description}"
 
@@ -137,7 +142,9 @@ def create_incident(
                 logger.error(
                     f"Error sending message to incident digest channel: {error}"
                 )
-            logger.info(f"Sending message to digest channel for: {fmt_channel_name}")
+            logger.info(
+                f"Sending message to digest channel for: {fmt_channel_name}"
+            )
             """
             Set incident channel topic
             """
@@ -163,7 +170,9 @@ def create_incident(
                 )
                 logger.debug(f"\n{bp_message}\n")
             except slack_sdk.errors.SlackApiError as error:
-                logger.error(f"Error sending message to incident channel: {error}")
+                logger.error(
+                    f"Error sending message to incident channel: {error}"
+                )
             # Pin the boilerplate message to the channel for quick access.
             slack_web_client.pins_add(
                 channel=createdChannelDetails["id"],
@@ -203,7 +212,9 @@ def create_incident(
             """
             Write incident entry to database
             """
-            logger.info(f"Writing incident entry to database for {fmt_channel_name}...")
+            logger.info(
+                f"Writing incident entry to database for {fmt_channel_name}..."
+            )
             try:
                 db_write_incident(
                     fmt_channel_name,
@@ -303,7 +314,9 @@ def handle_incident_optional_features(
     External provider statuses (optional)
     """
     if config.incident_external_providers_enabled == "true":
-        providers = str.split(str.lower(config.incident_external_providers_list), ",")
+        providers = str.split(
+            str.lower(config.incident_external_providers_list), ","
+        )
         for p in providers:
             ext_incidents = epi.ExternalProviderIncidents(
                 provider=p,
@@ -366,7 +379,9 @@ def handle_incident_optional_features(
     """
     if internal and config.incident_auto_create_from_react_enabled == "true":
         original_channel = request_parameters["channel"]
-        original_message_timestamp = request_parameters["original_message_timestamp"]
+        original_message_timestamp = request_parameters[
+            "original_message_timestamp"
+        ]
         formatted_timestamp = str.replace(original_message_timestamp, ".", "")
         link_to_message = f"https://{slack_workspace_id}.slack.com/archives/{original_channel}/p{formatted_timestamp}"
         try:
@@ -471,7 +486,8 @@ def build_digest_notification(
         "zoom_link_var_placeholder": zoom_link,
     }
     return tools.render_json(
-        f"{config.templates_directory}incident_digest_notification.json", variables
+        f"{config.templates_directory}incident_digest_notification.json",
+        variables,
     )
 
 
@@ -488,7 +504,8 @@ def build_incident_channel_boilerplate(
         "incident_postmortems_link_var_placeholder": incident_postmortems_link,
     }
     return tools.render_json(
-        f"{config.templates_directory}incident_channel_boilerplate.json", variables
+        f"{config.templates_directory}incident_channel_boilerplate.json",
+        variables,
     )
 
 
@@ -509,7 +526,8 @@ def build_post_resolution_message(channel: str, status: str) -> Dict[str, str]:
         "incident_postmortems_link_var_placeholder": incident_postmortems_link,
     }
     return tools.render_json(
-        f"{config.templates_directory}incident_resolution_message.json", variables
+        f"{config.templates_directory}incident_resolution_message.json",
+        variables,
     )
 
 
@@ -550,7 +568,9 @@ def build_severity_update(channel: str, severity: str) -> Dict[str, str]:
     variables = {
         "channel_id_var_placeholder": channel,
         "severity_var_placeholder": severity.upper(),
-        "severity_description_var_placeholder": severity_descriptions[severity],
+        "severity_description_var_placeholder": severity_descriptions[
+            severity
+        ],
     }
     return tools.render_json(
         f"{config.templates_directory}incident_severity_update.json", variables
