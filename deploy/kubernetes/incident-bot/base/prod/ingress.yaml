@@ -3,13 +3,13 @@ kind: Ingress
 metadata:
   name: incident-bot
 spec:
-  rules:
-    - http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: incident-bot
-                port:
-                  number: 80
+    rules:
+      - http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: incident-bot
+                  port:
+                    number: 80
