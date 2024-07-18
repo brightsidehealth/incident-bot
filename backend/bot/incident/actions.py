@@ -338,65 +338,67 @@ def set_incident_status(
                         f"Error sending note to {channel_name} regarding missing role claim: {error}"
                     )
                 return
-        # Create rca channel
-        rca_channel_name = f"{channel_name}-rca"
-        try:
-            rca_channel = slack_web_client.conversations_create(
-                name=rca_channel_name
-            )
-            # Log the result which includes information like the ID of the conversation
-            logger.debug(f"\n{rca_channel_name}\n")
-            logger.info(f"Creating rca channel: {rca_channel_name}")
-            # Write audit log
-            log.write(
-                incident_id=channel_name,
-                event=f"RCA channel was created.",
-                content=rca_channel["channel"]["id"],
-            )
-        except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error creating rca channel: {error}")
-        # Invite incident commander and technical lead if they weren't empty
-        rcaChannelDetails = {
-            "id": rca_channel["channel"]["id"],
-            "name": rca_channel["channel"]["name"],
-        }
-        # We want real user names to tag in the rca doc
-        actual_user_names = []
-        for person in [incident_commander, technical_lead]:
-            if person != "_none_":
-                str = person.replace("<", "").replace(">", "").replace("@", "")
-                invite_user_to_channel(rcaChannelDetails["id"], str)
-                # Get real name of user to be used to generate RCA
-                actual_user_names.append(
-                    slack_web_client.users_info(user=str)["user"]["profile"][
-                        "real_name"
-                    ]
-                )
-            else:
-                logger.error(
-                    f"Cannot invite {person} to rca channel because the role was not claimed."
-                )
-        # Format boilerplate message to rca channel
-        rca_boilerplate_message_blocks = [
-            {"type": "divider"},
-            {
-                "type": "header",
-                "text": {
-                    "type": "plain_text",
-                    "text": ":white_check_mark: Incident RCA Planning",
-                },
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"You have been invited to this channel to assist with planning the RCA for <#{channel_id}>. The Incident Commander should invite anyone who can help contribute to the RCA and then use this channel to plan the meeting to go over the incident.",
-                },
-            },
-        ]
         # Generate rca template and create rca if enabled
         # Get normalized description as rca title
         if config.auto_create_rca == "true":
+            # Create rca channel
+            rca_channel_name = f"{channel_name}-rca"
+            try:
+                rca_channel = slack_web_client.conversations_create(
+                    name=rca_channel_name
+                )
+                # Log the result which includes information like the ID of the conversation
+                logger.debug(f"\n{rca_channel_name}\n")
+                logger.info(f"Creating rca channel: {rca_channel_name}")
+                # Write audit log
+                log.write(
+                    incident_id=channel_name,
+                    event=f"RCA channel was created.",
+                    content=rca_channel["channel"]["id"],
+                )
+            except slack_sdk.errors.SlackApiError as error:
+                logger.error(f"Error creating rca channel: {error}")
+            # Invite incident commander and technical lead if they weren't empty
+            rcaChannelDetails = {
+                "id": rca_channel["channel"]["id"],
+                "name": rca_channel["channel"]["name"],
+            }
+            # We want real user names to tag in the rca doc
+            actual_user_names = []
+            for person in [incident_commander, technical_lead]:
+                if person != "_none_":
+                    str = person.replace("<", "").replace(">", "").replace("@", "")
+                    invite_user_to_channel(rcaChannelDetails["id"], str)
+                    # Get real name of user to be used to generate RCA
+                    actual_user_names.append(
+                        slack_web_client.users_info(user=str)["user"]["profile"][
+                            "real_name"
+                        ]
+                    )
+                else:
+                    logger.error(
+                        f"Cannot invite {person} to rca channel because the role was not claimed."
+                    )
+            # Format boilerplate message to rca channel
+            rca_boilerplate_message_blocks = [
+                {"type": "divider"},
+                {
+                    "type": "header",
+                    "text": {
+                        "type": "plain_text",
+                        "text": ":white_check_mark: Incident RCA Planning",
+                    },
+                },
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"You have been invited to this channel to assist with planning the RCA for <#{channel_id}>. The Incident Commander should invite anyone who can help contribute to the RCA and then use this channel to plan the meeting to go over the incident.",
+                    },
+                },
+            ]
+
+            # create rca page
             rca_title = " ".join(channel_name.split("-")[2:])
             rca_link = rca.create_rca(
                 incident_id=channel_name,
